@@ -8,7 +8,14 @@ in
 {
   options.ffnix = {
     enable = mkEnableOption "ffnix";
-    batman-legacy = mkEnableOption "batman-adv-legacy";
+    batman-legacy = mkOption {
+      default = false;
+      example = true;
+      type = types.bool;
+      description = ''
+        Use batman-adv-legacy - do not use in new communities!
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -19,5 +26,6 @@ in
 
   imports = [
     ./modules/batman.nix
+    ./modules/fastd.nix
   ];
 }
