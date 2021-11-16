@@ -16,6 +16,24 @@ in
         Use batman-adv-legacy - do not use in new communities!
       '';
     };
+    bird = {
+      enable = mkEnableOption "bird routing daemon";
+      routerID = mkOption {
+        type = types.str;
+      };
+      kernelTable = mkOption {
+        type= types.int;
+      };
+      earlyExtraConfig = mkOption {
+        type = types.lines;
+        default = "";
+      };
+      extraConfig = mkOption {
+        type = types.lines;
+        default = "";
+      };
+  };
+
   };
 
   config = mkIf cfg.enable {
@@ -27,5 +45,6 @@ in
   imports = [
     ./modules/batman.nix
     ./modules/fastd.nix
+    ./modules/bird
   ];
 }
