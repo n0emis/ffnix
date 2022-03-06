@@ -32,8 +32,7 @@ in
         type = types.lines;
         default = "";
       };
-  };
-
+    };
   };
 
   config = mkIf cfg.enable {
