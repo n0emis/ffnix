@@ -10,11 +10,11 @@ in
     boot.kernelModules = [ "batman_adv" ];
 
     boot.extraModulePackages = []
-      ++ lib.optional (!cfg.batman-legacy) config.boot.kernelPackages.batman_adv
-      ++ lib.optional cfg.batman-legacy (pkgs.batman-adv-legacy config.boot.kernelPackages);
+      ++ lib.optional (!cfg.batmanLegacy) config.boot.kernelPackages.batman_adv
+      ++ lib.optional cfg.batmanLegacy (pkgs.batman-adv-legacy config.boot.kernelPackages);
 
     environment.systemPackages = []
-      ++ lib.optional (!cfg.batman-legacy) pkgs.batctl
-      ++ lib.optional cfg.batman-legacy pkgs.batctl-legacy;
+      ++ lib.optional (!cfg.batmanLegacy) pkgs.batctl
+      ++ lib.optional cfg.batmanLegacy pkgs.batctl-legacy;
   };
 }

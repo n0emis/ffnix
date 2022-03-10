@@ -4,11 +4,12 @@ with lib;
 
 let
   cfg = config.ffnix;
+  activeDomains = attrsets.filterAttrs (n: v: v.enable) cfg.domains;
 in
 {
   options.ffnix = {
     enable = mkEnableOption "ffnix";
-    batman-legacy = mkOption {
+    batmanLegacy = mkOption {
       default = false;
       example = true;
       type = types.bool;
@@ -33,12 +34,58 @@ in
         default = "";
       };
     };
+    domains = mkOption {
+      description = "Freifunk Domains (a domain is a seperated L2 network segment)";
+      default = {};
+      type = with types; attrsOf (submodule {
+        options = {
+          enable = mkEnableOption "ffnix Site";
+          ipv4Prefix = mkOption {
+            type = types.str;
+          };
+          ipv6Prefixes = mkOption {
+            type = types.listOf types.str;
+          };
+          addresses = mkOption {
+            type = types.listOf types.str;
+          };
+          routingTable = mkOption {
+            type = types.int;
+          };
+          mtu = mkOption {
+            type = types.int;
+          };
+          enableRadvd = mkOption {
+            default = false;
+            type = types.bool;
+          };
+          radvdPrefixes = mkOption {
+            default = [];
+            type = types.listOf types.str;
+          };
+          dhcpRange = mkOption {
+            default = "";
+            type = types.str;
+          };
+          searchDomains = mkOption {
+            default = [];
+            type = types.listOf types.str;
+          };
+          tunnels = mkOption {
+            default = {};
+            type = (pkgs.formats.json {}).type;
+          };
+        };
+      });
+    };
   };
 
   config = mkIf cfg.enable {
     services.vnstat.enable = true;
 
     programs.mtr.enable = true;
+
+    environment.etc."ffnix.json".source = pkgs.writeText "ffnix.json" (generators.toJSON {} activeDomains);
   };
 
   imports = [
