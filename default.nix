@@ -47,6 +47,10 @@ in
           };
           addresses = mkOption {
             type = types.listOf types.str;
+            description = ''
+              Addresses to be configured on the bridge interface.
+              WARNING: the primary-ipv4-address to be send as a gateway address via DHCP has to be the first one.
+            '';
           };
           routingTable = mkOption {
             type = types.int;
@@ -73,9 +77,15 @@ in
             default = "";
             type = types.str;
           };
-          searchDomains = mkOption {
-            default = [];
-            type = types.listOf types.str;
+          searchDomain = mkOption {
+            type = types.str;
+          };
+          dhcpExtraConfig = mkOption {
+            description = ''
+              Additional config that will me merged with the kea-subnet4 config
+            '';
+            default = {};
+            type = (pkgs.formats.json {}).type;
           };
           batmanAlgorithm = mkOption {
             default = "batman-iv";

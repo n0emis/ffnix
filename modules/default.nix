@@ -116,6 +116,31 @@ let
           RemainAfterExit = true;
         };
       };
+
+      #### KEA / DHCPv4 ####
+      keaInterfaces = if (domCfg.dhcpRange == "") then [] else [ "${mkIfName "bridge"}" ];
+      keaSubnet4 = mkIf (domCfg.dhcpRange != "") ([ ({
+        subnet = domCfg.ipv4Prefix;
+        pools = [
+          {
+            pool = domCfg.dhcpRange;
+          }
+        ];
+        option-data = [
+          {
+            name = "routers";
+            data = head domCfg.addresses;
+          }
+          {
+            name = "domain-name-servers";
+            data = head domCfg.addresses;
+          }
+          {
+            name = "domain-name";
+            data = domCfg.searchDomain;
+          }
+        ];
+      } // domCfg.dhcpExtraConfig) ]);
     };
 
     domConfigs = map (key: getAttr key (mapAttrs mkDomain activeDomains)) (attrNames activeDomains);
@@ -128,7 +153,19 @@ in
     systemd.network.netdevs = mergedConfigs.netdevs;
     systemd.network.networks = mergedConfigs.networks;
     systemd.network.links = mergedConfigs.links;
+
     systemd.services = mergedConfigs.services;
+
     ffnix.fastd.instances = mergedConfigs.fdInstances;
+
+    services.kea.dhcp4 = mkIf (concatLists mergedConfigs.keaInterfaces.contents != []) {
+      enable = true;
+      settings = {
+        interfaces-config = {
+          interfaces = mergedConfigs.keaInterfaces;
+        };
+        subnet4 = mergedConfigs.keaSubnet4;
+      };
+    };
   };
 }
