@@ -11,8 +11,10 @@ let
       mkIfName = type:
         if type == "bridge" then "br-${name}" else
         if type == "batman" then "bat-${name}" else
+        if type == "fastd" then "fd-${name}" else
         throw "unknown interface type ${type}, coud not generate name";
     in {
+      #### NULL-ROUTES ####
       networks."10-lo" = {
         routes = if !domCfg.defaultNullRoute then [] else [
           {
@@ -34,13 +36,17 @@ let
         ];
       };
 
+      #### BRIDGE ####
       netdevs."30-${mkIfName "bridge"}".netdevConfig = {
         Name = mkIfName "bridge";
         Kind = "bridge";
       };
       networks."30-${mkIfName "bridge"}" = {
         matchConfig.Name = mkIfName "bridge";
-        linkConfig.RequiredForOnline = "no";
+        linkConfig = {
+          RequiredForOnline = "no";
+          MTUBytes = "${toString domCfg.mtu}";
+        };
         address = domCfg.addresses;
         routes = map (prefix: {
           routeConfig = {
@@ -65,6 +71,7 @@ let
         }) (domCfg.ipv6Prefixes ++ [ domCfg.ipv4Prefix ]);
       };
 
+      #### BATMAN ####
       netdevs."30-${mkIfName "batman"}" = mkIf (!cfg.batmanLegacy) {
         netdevConfig = {
           Kind = "batadv";
@@ -80,6 +87,35 @@ let
         matchConfig.Name = mkIfName "batman";
         bridge = [ "${mkIfName "bridge"}" ];
       };
+
+      #### FASTD ####
+      fdInstances."${mkIfName "fastd"}" = mkIf domCfg.tunnels.fastd.enable ({
+        bind = mkDefault [ "any:${toString domCfg.tunnels.fastd.port}" ];
+        mtu = domCfg.tunnels.fastd.mtu;
+      } // domCfg.tunnels.fastd.extraConfig);
+      links."30-${mkIfName "fastd"}" = mkIf domCfg.tunnels.fastd.enable {
+        matchConfig.OriginalName = mkIfName "fastd";
+        linkConfig.MACAddress = domCfg.tunnels.fastd.interfaceMac;
+      };
+      networks."30-${mkIfName "fastd"}" = mkIf (domCfg.tunnels.fastd.enable && !cfg.batmanLegacy) {
+        matchConfig.Name = mkIfName "fastd";
+        networkConfig.BatmanAdvanced = mkIfName "batman";
+      };
+      services."${mkIfName "batman"}" = mkIf (domCfg.tunnels.fastd.enable && cfg.batmanLegacy) {
+        after = [ "fastd-${mkIfName "fastd"}.service" ];
+        requiredBy = [ "fastd-${mkIfName "fastd"}.service" ];
+
+        script = ''
+          timeout 30 ${pkgs.bash}/bin/sh -c 'while ! ${pkgs.iproute2}/bin/ip link show dev ${mkIfName "fastd"} | grep UNKNOWN ; do sleep 1; done'
+          ${pkgs.batctl-legacy}/bin/batctl -m ${mkIfName "batman"} interface add ${mkIfName "fastd"} || true
+          ${pkgs.batctl-legacy}/bin/batctl -m ${mkIfName "batman"} gw_mode server || true
+        '';
+
+        serviceConfig =  {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+      };
     };
 
     domConfigs = map (key: getAttr key (mapAttrs mkDomain activeDomains)) (attrNames activeDomains);
@@ -91,5 +127,8 @@ in
     environment.etc."ffnix.json".source = pkgs.writeText "ffnix.json" (generators.toJSON {} activeDomains);
     systemd.network.netdevs = mergedConfigs.netdevs;
     systemd.network.networks = mergedConfigs.networks;
+    systemd.network.links = mergedConfigs.links;
+    systemd.services = mergedConfigs.services;
+    ffnix.fastd.instances = mergedConfigs.fdInstances;
   };
 }

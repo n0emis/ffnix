@@ -38,7 +38,7 @@ in
       default = {};
       type = with types; attrsOf (submodule {
         options = {
-          enable = mkEnableOption "ffnix Site";
+          enable = mkEnableOption "ffnix Domain";
           ipv4Prefix = mkOption {
             type = types.str;
           };
@@ -83,7 +83,36 @@ in
           };
           tunnels = mkOption {
             default = {};
-            type = (pkgs.formats.json {}).type;
+            type = types.submodule {
+              options = {
+                fastd = mkOption {
+                  default = {};
+                  type = types.submodule {
+                    options = {
+                      enable = mkEnableOption "Fastd Tunnel";
+                      mtu = mkOption {
+                        type = types.int;
+                        default = 1406;
+                      };
+                      port = mkOption {
+                        type = types.int;
+                        default = 10000;
+                      };
+                      interfaceMac = mkOption {
+                        type = types.str;
+                      };
+                      extraConfig = mkOption {
+                        description = ''
+                          Additional config that will me merged with the fastd-instance config
+                        '';
+                        default = {};
+                        type = (pkgs.formats.json {}).type;
+                      };
+                    };
+                  };
+                };
+              };
+            };
           };
         };
       });
