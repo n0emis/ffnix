@@ -1,7 +1,5 @@
 { config, lib, pkgs, ... }:
 
-with import ../common-vars.nix { inherit lib config; };
-
 let
   cfg = config.ffnix.bird;
 in {

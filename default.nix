@@ -4,7 +4,6 @@ with lib;
 
 let
   cfg = config.ffnix;
-  activeDomains = attrsets.filterAttrs (n: v: v.enable) cfg.domains;
 in
 {
   options.ffnix = {
@@ -52,6 +51,13 @@ in
           routingTable = mkOption {
             type = types.int;
           };
+          defaultNullRoute = mkOption {
+            type = types.bool;
+            default = true;
+            description = ''
+              Create a Null-Route in the routing-table to allow traffic leaks on the gateways default route when uplink is down.
+            '';
+          };
           mtu = mkOption {
             type = types.int;
           };
@@ -71,6 +77,10 @@ in
             default = [];
             type = types.listOf types.str;
           };
+          batmanAlgorithm = mkOption {
+            default = "batman-iv";
+            type = types.str;
+          };
           tunnels = mkOption {
             default = {};
             type = (pkgs.formats.json {}).type;
@@ -85,10 +95,10 @@ in
 
     programs.mtr.enable = true;
 
-    environment.etc."ffnix.json".source = pkgs.writeText "ffnix.json" (generators.toJSON {} activeDomains);
   };
 
   imports = [
+    ./modules
     ./modules/batman.nix
     ./modules/fastd.nix
     ./modules/bird
