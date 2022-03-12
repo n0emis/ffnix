@@ -45,11 +45,17 @@ in
           ipv6Prefixes = mkOption {
             type = types.listOf types.str;
           };
-          addresses = mkOption {
+          ipv4Addresses = mkOption {
             type = types.listOf types.str;
             description = ''
-              Addresses to be configured on the bridge interface.
+              IPv4 Addresses to be configured on the bridge interface.
               WARNING: the primary-ipv4-address to be send as a gateway address via DHCP has to be the first one.
+            '';
+          };
+          ipv6Addresses = mkOption {
+            type = types.listOf types.str;
+            description = ''
+              IPv6 Addresses to be configured on the bridge interface.
             '';
           };
           routingTable = mkOption {
@@ -60,6 +66,7 @@ in
             default = true;
             description = ''
               Create a Null-Route in the routing-table to allow traffic leaks on the gateways default route when uplink is down.
+              The first address will be sen't as the DNS-Server via RAs.
             '';
           };
           mtu = mkOption {

@@ -8,6 +8,7 @@ let
 
   mkDomain = name: domCfg:
     let
+      cidrToAddress = cidr: head (splitString "/" cidr);
       mkIfName = type:
         if type == "bridge" then "br-${name}" else
         if type == "batman" then "bat-${name}" else
@@ -47,7 +48,7 @@ let
           RequiredForOnline = "no";
           MTUBytes = "${toString domCfg.mtu}";
         };
-        address = domCfg.addresses;
+        address = domCfg.ipv4Addresses ++ domCfg.ipv6Addresses;
         routes = map (prefix: {
           routeConfig = {
             Destination = prefix;
@@ -129,11 +130,11 @@ let
         option-data = [
           {
             name = "routers";
-            data = head domCfg.addresses;
+            data = cidrToAddress (head domCfg.ipv4Addresses);
           }
           {
             name = "domain-name-servers";
-            data = head domCfg.addresses;
+            data = cidrToAddress (head domCfg.ipv4Addresses);
           }
           {
             name = "domain-name";
@@ -141,15 +142,32 @@ let
           }
         ];
       } // domCfg.dhcpExtraConfig) ]);
+
+      #### RADVD ####
+      radvdConfig = let
+        radvdPrefixes = if domCfg.radvdPrefixes == [] then domCfg.ipv6Prefixes else domCfg.radvdPrefixes;
+        mkPrefix = prefix: ''
+          prefix ${prefix} { };
+        '';
+      in if (!domCfg.enableRadvd) then [] else [ ''
+        interface ${mkIfName "bridge"} {
+          IgnoreIfMissing on;
+          AdvSendAdvert on;
+          AdvLinkMTU ${toString domCfg.mtu};
+          RDNSS ${cidrToAddress (head domCfg.ipv6Addresses)} { };
+          DNSSL ${domCfg.searchDomain} { };
+
+          ${concatStringsSep "\n" (map mkPrefix radvdPrefixes)}
+        };
+      '' ];
     };
 
     domConfigs = map (key: getAttr key (mapAttrs mkDomain activeDomains)) (attrNames activeDomains);
-    mergedConfigs = mapAttrs (name: value: mkMerge value) (attrsets.zipAttrs (map (x: removeAttrs x [ "foo" ]) domConfigs));
+    mergedConfigs = mapAttrs (name: value: mkMerge value) (attrsets.zipAttrs (map (x: removeAttrs x [ ]) domConfigs));
 
 in
 {
   config = mkIf cfg.enable {
-    environment.etc."ffnix.json".source = pkgs.writeText "ffnix.json" (generators.toJSON {} activeDomains);
     systemd.network.netdevs = mergedConfigs.netdevs;
     systemd.network.networks = mergedConfigs.networks;
     systemd.network.links = mergedConfigs.links;
@@ -166,6 +184,11 @@ in
         };
         subnet4 = mergedConfigs.keaSubnet4;
       };
+    };
+
+    services.radvd = mkIf (concatLists mergedConfigs.radvdConfig.contents != []) {
+      enable = true;
+      config = concatStringsSep "\n" (concatLists mergedConfigs.radvdConfig.contents);
     };
   };
 }
