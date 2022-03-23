@@ -9,11 +9,11 @@ let
   mkDomain = name: domCfg:
     let
       cidrToAddress = cidr: head (splitString "/" cidr);
-      mkIfName = type:
+      mkIfName = substring 0 16 (type:
         if type == "bridge" then "br-${name}" else
         if type == "batman" then "bat-${name}" else
         if type == "fastd" then "fd-${name}" else
-        throw "unknown interface type ${type}, coud not generate name";
+        throw "unknown interface type ${type}, coud not generate name");
     in {
       #### NULL-ROUTES ####
       networks."10-lo" = {
