@@ -221,7 +221,7 @@ let
 
       blacklist = if (values.blacklistedKeys == null) then null else pkgs.writeText "fastd-blacklist-${name}" values.blacklistedKeys;
 
-      verifyScript = if (values.verifyScript != null) then pkgs.writeScript "fastd-verify-${name}.sh"
+      verifyScript = if (values.verifyScript != null) then pkgs.writeScript "fastd-verify-${name}.sh" values.verifyScript
         else if (values.blacklistedKeys != null) then pkgs.writeScript "fastd-verify-${name}.sh" ''
           #!${pkgs.stdenv.shell}
           PEER_KEY=$1
