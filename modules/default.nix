@@ -107,7 +107,7 @@ let
         requiredBy = [ "fastd-${mkIfName "fastd"}.service" ];
 
         script = ''
-          timeout 30 ${pkgs.bash}/bin/sh -c 'while ! ${pkgs.iproute2}/bin/ip link show dev ${mkIfName "fastd"} | grep UNKNOWN ; do sleep 1; done'
+          timeout 30 ${pkgs.bash}/bin/sh -c 'while ! ${pkgs.iproute2}/bin/ip link show dev ${mkIfName "fastd"} | grep -e UNKNOWN -e DOWN ; do sleep 1; done'
           ${pkgs.batctl-legacy}/bin/batctl -m ${mkIfName "batman"} interface add ${mkIfName "fastd"} || true
           ${pkgs.batctl-legacy}/bin/batctl -m ${mkIfName "batman"} gw_mode server || true
         '';
