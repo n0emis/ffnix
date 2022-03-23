@@ -9,7 +9,7 @@ let
   mkDomain = name: domCfg:
     let
       cidrToAddress = cidr: head (splitString "/" cidr);
-      mkIfName = type: substring 0 16 (
+      mkIfName = type: substring 0 15 (
         if type == "bridge" then "br-${name}" else
         if type == "batman" then "bat-${name}" else
         if type == "fastd" then "fd-${name}" else
