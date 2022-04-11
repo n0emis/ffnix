@@ -148,12 +148,18 @@ let
       radvdConfig = let
         radvdPrefixes = if domCfg.radvdPrefixes == [] then domCfg.ipv6Prefixes else domCfg.radvdPrefixes;
         mkPrefix = prefix: ''
-          prefix ${prefix} { };
+          prefix ${prefix} {
+            AdvOnLink on;
+            AdvAutonomous on;
+            AdvRouterAddr on;
+          };
         '';
       in if (!domCfg.enableRadvd) then [] else [ ''
         interface ${mkIfName "bridge"} {
           IgnoreIfMissing on;
           AdvSendAdvert on;
+          MinRtrAdvInterval 3;
+          MaxRtrAdvInterval 10;
           AdvLinkMTU ${toString domCfg.mtu};
           RDNSS ${cidrToAddress (head domCfg.ipv6Addresses)} { };
           DNSSL ${domCfg.searchDomain} { };
