@@ -1,0 +1,22 @@
+diff --git a/main.c b/main.c
+index b177f3b..8219e81 100644
+--- a/main.c
++++ b/main.c
+@@ -589,5 +589,4 @@ MODULE_LICENSE("GPL");
+ 
+ MODULE_AUTHOR(BATADV_DRIVER_AUTHOR);
+ MODULE_DESCRIPTION(BATADV_DRIVER_DESC);
+-MODULE_SUPPORTED_DEVICE(BATADV_DRIVER_DEVICE);
+ MODULE_VERSION(BATADV_SOURCE_VERSION);
+diff --git a/main.h b/main.h
+index 675fac3..a068a39 100644
+--- a/main.h
++++ b/main.h
+@@ -23,7 +23,6 @@
+ #define BATADV_DRIVER_AUTHOR "Marek Lindner <lindner_marek@yahoo.de>, " \
+ 			     "Simon Wunderlich <siwu@hrz.tu-chemnitz.de>"
+ #define BATADV_DRIVER_DESC   "B.A.T.M.A.N. advanced"
+-#define BATADV_DRIVER_DEVICE "batman-adv"
+ 
+ #ifndef BATADV_SOURCE_VERSION
+ #define BATADV_SOURCE_VERSION "2013.4.0"

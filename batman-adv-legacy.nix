@@ -11,6 +11,10 @@ stdenv.mkDerivation rec {
     sha256 = "sha256-9nivJU+GndvlgD2bh3Y2213Qv79gDRagmsCzuN9zt/Y=";
   };
 
+  patches = [
+    ./batadv-legacy.patch
+  ];
+
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
   hardeningDisable = [ "pic" ];
